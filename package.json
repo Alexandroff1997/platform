@@ -2,15 +2,33 @@
   "name": "@platform/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "db:migration:create": "node apps/account/tools/typeorm/typeorm-cli.cjs migration:create",
+    "db:migration:run": "node apps/account/tools/typeorm/typeorm-cli.cjs migration:run -d apps/account/tools/typeorm/typeorm.config.ts",
+    "db:migration:revert": "node apps/account/tools/typeorm/typeorm-cli.cjs migration:revert -d apps/account/tools/typeorm/typeorm.config.ts",
+    "db:migration:show": "node apps/account/tools/typeorm/typeorm-cli.cjs migration:show -d apps/account/tools/typeorm/typeorm.config.ts",
+    "db:seed": "node apps/account/tools/typeorm/typeorm-cli.cjs seed"
+  },
   "private": true,
   "dependencies": {
     "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^12.1.1",
     "@nestjs/core": "^11.0.0",
+    "@nestjs/passport": "^12.0.1",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/typeorm": "^11.0.3",
     "axios": "^1.6.0",
+    "bcryptjs": "^3.0.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "dotenv": "^16.6.1",
+    "jsonwebtoken": "^9.0.3",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "pg": "^8.23.1",
     "reflect-metadata": "^0.2.0",
-    "rxjs": "^7.8.0"
+    "rxjs": "^7.8.0",
+    "typeorm": "^0.3.31"
   },
   "devDependencies": {
     "@eslint/js": "^9.8.0",
@@ -37,6 +55,7 @@
     "prettier": "~3.6.2",
     "ts-jest": "^29.4.7",
     "ts-node": "10.9.1",
+    "tsconfig-paths": "^4.2.0",
     "tslib": "^2.3.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.58.0",

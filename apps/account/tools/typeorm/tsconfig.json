@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2021",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "types": ["node"],
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@platform/shared": ["../../../../libs/shared/src/index.ts"]
+    }
+  },
+  "include": [
+    "typeorm.config.ts",
+    "../../src/app/config/env-paths.ts",
+    "../../src/app/database/database-url.ts",
+    "../../src/app/database/seeds/seed-user.ts"
+  ]
+}

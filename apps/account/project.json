@@ -1,0 +1,56 @@
+{
+  "name": "account",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/account/src",
+  "projectType": "application",
+  "tags": ["scope:account", "type:app"],
+  "//": "Nx загружает .env файлы проекта (apps/account/.env) и корня репозитория в окружение каждой задачи; для запуска без этой автозагрузки используйте NX_LOAD_DOT_ENV_FILES=false.",
+  "targets": {
+    "prune-lockfile": {
+      "dependsOn": ["build"],
+      "cache": true,
+      "executor": "@nx/js:prune-lockfile",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/account/package.json",
+        "{workspaceRoot}/dist/apps/account/package-lock.json"
+      ],
+      "options": {
+        "buildTarget": "build"
+      }
+    },
+    "copy-workspace-modules": {
+      "dependsOn": ["build"],
+      "cache": true,
+      "outputs": ["{workspaceRoot}/dist/apps/account/workspace_modules"],
+      "executor": "@nx/js:copy-workspace-modules",
+      "options": {
+        "buildTarget": "build"
+      }
+    },
+    "prune": {
+      "dependsOn": ["prune-lockfile", "copy-workspace-modules"],
+      "executor": "nx:noop"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "readyWhen": {
+        "signal": true
+      },
+      "options": {
+        "buildTarget": "account:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "account:build:development"
+        },
+        "production": {
+          "buildTarget": "account:build:production"
+        }
+      }
+    }
+  }
+}

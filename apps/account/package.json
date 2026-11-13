@@ -1,0 +1,24 @@
+{
+  "name": "@platform/account",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^12.1.1",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/typeorm": "^11.0.3",
+    "bcryptjs": "^3.0.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "dotenv": "^16.6.1",
+    "pg": "^8.23.1",
+    "reflect-metadata": "^0.2.0",
+    "rxjs": "^7.8.0",
+    "tslib": "^2.3.0",
+    "typeorm": "^0.3.31"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.0.0"
+  }
+}
