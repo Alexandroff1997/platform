@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Account - Users (API pending)",
-    "description": "Черновик запросов для будущего HTTP API пользователей. Сейчас в account нет UserController или маршрутов создания, поиска и удаления пользователей: эти запросы вернут 404. Пути, формат тела и ответы предварительные и требуют согласования при реализации API. Запускать только в локальной среде с тестовыми данными.",
+    "name": "Account - Auth",
+    "description": "Самодостаточные сценарии регистрации и входа. Запускайте коллекцию в Collection Runner против локального API; email генерируется заново для каждого запуска.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -11,14 +11,39 @@
       "type": "string"
     },
     {
+      "key": "password",
+      "value": "PostmanDemoPass123!",
+      "type": "string"
+    },
+    {
       "key": "userEmail",
-      "value": "postman-user@example.com",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "teacherEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "unknownEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "studentSub",
+      "value": "",
       "type": "string"
     }
   ],
   "item": [
     {
-      "name": "Создать пользователя (маршрут не реализован)",
+      "name": "Регистрация: роль Student по умолчанию",
       "request": {
         "method": "POST",
         "header": [
@@ -27,39 +52,542 @@
             "value": "application/json"
           }
         ],
+        "url": "{{baseUrl}}/auth/register",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"displayName\": \"Postman Test User\",\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"LocalTestPassword123!\",\n  \"role\": \"Student\"\n}",
+          "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{password}}\"\n}",
           "options": {
             "raw": {
               "language": "json"
             }
           }
         },
-        "url": "{{baseUrl}}/users",
-        "description": "Предполагаемый маршрут и тело. Сейчас API не существует; HTTP-обработчик должен безопасно хешировать пароль перед вызовом UserService."
+        "description": "Первый запрос каждого запуска создаёт новый email и сохраняет его для следующих сценариев."
       },
-      "response": []
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const suffix = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);",
+              "const email = 'postman-' + suffix + '@example.test';",
+              "pm.collectionVariables.set('userEmail', email);",
+              "pm.collectionVariables.set('teacherEmail', 'teacher-' + email);",
+              "pm.collectionVariables.set('unknownEmail', 'unknown-' + email);",
+              "pm.collectionVariables.set('accessToken', '');",
+              "pm.collectionVariables.set('studentSub', '');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+              "pm.test('registration response contract', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.email).to.eql(pm.collectionVariables.get('userEmail'));",
+              "  pm.expect(body.message).to.eql('User successfully created');",
+              "  pm.expect(Object.keys(body).sort()).to.eql(['email', 'message']);",
+              "});"
+            ]
+          }
+        }
+      ]
     },
     {
-      "name": "Найти пользователя по email (маршрут не реализован)",
+      "name": "Регистрация: повторный email → 409",
       "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/users?email={{userEmail}}",
-        "description": "Предполагаемый маршрут и параметр email; фактический контракт ещё не определён."
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
       },
-      "response": []
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 409', function () { pm.response.to.have.status(409); });"
+            ]
+          }
+        }
+      ]
     },
     {
-      "name": "Удалить пользователя по email (маршрут не реализован)",
+      "name": "Вход: Student и сохранение accessToken",
       "request": {
-        "method": "DELETE",
-        "header": [],
-        "url": "{{baseUrl}}/users?email={{userEmail}}",
-        "description": "Предполагаемый маршрут и параметр email; фактический контракт ещё не определён. Удаление относится только к локальным тестовым данным."
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
       },
-      "response": []
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('login returns an access token', function () {",
+              "  pm.expect(body.accessToken).to.be.a('string').and.not.empty;",
+              "  pm.expect(Object.keys(body)).to.eql(['accessToken']);",
+              "});",
+              "const parts = body.accessToken.split('.');",
+              "pm.test('JWT has three parts', function () { pm.expect(parts).to.have.lengthOf(3); });",
+              "let header;",
+              "let claims;",
+              "try {",
+              "  const decodeBase64Url = function (value) { const base64 = value.replace(/-/g, '+').replace(/_/g, '/'); return atob(base64 + '='.repeat((4 - base64.length % 4) % 4)); };",
+              "  header = JSON.parse(decodeBase64Url(parts[0]));",
+              "  claims = JSON.parse(decodeBase64Url(parts[1]));",
+              "} catch (e) { throw new Error('JWT header or payload is not valid base64url JSON'); }",
+              "pm.test('JWT uses HS256', function () { pm.expect(header.alg).to.eql('HS256'); });",
+              "pm.test('JWT has Student claims and a 3600 second lifetime', function () {",
+              "  pm.expect(claims.sub).to.be.a('string').and.not.empty;",
+              "  pm.expect(claims.email).to.eql(pm.collectionVariables.get('userEmail'));",
+              "  pm.expect(claims.role).to.eql('Student');",
+              "  pm.expect(claims.iat).to.be.a('number');",
+              "  pm.expect(claims.exp - claims.iat).to.eql(3600);",
+              "});",
+              "pm.collectionVariables.set('studentSub', claims.sub);",
+              "pm.collectionVariables.set('accessToken', body.accessToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Регистрация: Teacher с displayName",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{teacherEmail}}\",\n  \"password\": \"{{password}}\",\n  \"displayName\": \"Postman Teacher\",\n  \"role\": \"Teacher\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+              "pm.test('registration response contract', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.email).to.eql(pm.collectionVariables.get('teacherEmail'));",
+              "  pm.expect(body.message).to.eql('User successfully created');",
+              "  pm.expect(Object.keys(body).sort()).to.eql(['email', 'message']);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Вход: Teacher",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{teacherEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('login returns an access token', function () { pm.expect(body.accessToken).to.be.a('string').and.not.empty; });",
+              "const parts = body.accessToken.split('.');",
+              "pm.test('JWT has three parts', function () { pm.expect(parts).to.have.lengthOf(3); });",
+              "let header;",
+              "let claims;",
+              "try {",
+              "  const decodeBase64Url = function (value) { const base64 = value.replace(/-/g, '+').replace(/_/g, '/'); return atob(base64 + '='.repeat((4 - base64.length % 4) % 4)); };",
+              "  header = JSON.parse(decodeBase64Url(parts[0]));",
+              "  claims = JSON.parse(decodeBase64Url(parts[1]));",
+              "} catch (e) { throw new Error('JWT header or payload is not valid base64url JSON'); }",
+              "pm.test('JWT uses HS256', function () { pm.expect(header.alg).to.eql('HS256'); });",
+              "pm.test('JWT has Teacher claims and a 3600 second lifetime', function () {",
+              "  pm.expect(claims.sub).to.be.a('string').and.not.empty;",
+              "  pm.expect(claims.email).to.eql(pm.collectionVariables.get('teacherEmail'));",
+              "  pm.expect(claims.role).to.eql('Teacher');",
+              "  pm.expect(claims.iat).to.be.a('number');",
+              "  pm.expect(claims.exp - claims.iat).to.eql(3600);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Вход: неверный пароль → 401",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"WrongPassword123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 401', function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Вход: неизвестный пользователь → 401",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{unknownEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 401', function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Регистрация: некорректный email → 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"not-an-email\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Регистрация: пустой пароль → 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"empty-password-{{userEmail}}\",\n  \"password\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Регистрация: пароль длиннее 72 UTF-8 байт → 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"long-password-{{userEmail}}\",\n  \"password\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Регистрация: неизвестная роль → 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"unknown-role-{{userEmail}}\",\n  \"password\": \"{{password}}\",\n  \"role\": \"Admin\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Регистрация: неизвестное поле → 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"unknown-field-{{userEmail}}\",\n  \"password\": \"{{password}}\",\n  \"isAdmin\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Регистрация: displayName null → 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"null-display-{{userEmail}}\",\n  \"password\": \"{{password}}\",\n  \"displayName\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Регистрация: role null → 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"null-role-{{userEmail}}\",\n  \"password\": \"{{password}}\",\n  \"role\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });"
+            ]
+          }
+        }
+      ]
     }
   ]
 }

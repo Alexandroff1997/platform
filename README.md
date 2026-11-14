@@ -1,6 +1,6 @@
 # Platform
 
-Монорепозиторий Nx с сервисами на NestJS. Сейчас доступен сервис **account** с PostgreSQL и проверкой учётных данных.
+Монорепозиторий Nx с сервисами на NestJS. Сейчас доступен сервис **account** с PostgreSQL, регистрацией и JWT-аутентификацией.
 
 ## Быстрый старт
 
@@ -15,6 +15,14 @@ npm run db:seed
 npx nx serve account
 ```
 
+Перед запуском API сгенерируйте секрет и добавьте его в `.env` как `JWT_SECRET` (не менее 32 байт):
+
+```sh
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Без корректного `JWT_SECRET` сервис не запустится. Срок действия токена — один час.
+
 Перед запуском сида при необходимости измените `SEED_USER_EMAIL` и `SEED_USER_PASSWORD` в `.env`. Сид предназначен только для локальной базы и не изменяет существующего пользователя.
 
 API доступен по адресу `http://localhost:3000/api`. Проверить вход:
@@ -25,7 +33,35 @@ curl -X POST http://localhost:3000/api/auth/login \
   -d '{"email":"test@example.com","password":"test"}'
 ```
 
-Используйте значения из `.env`. При успешной проверке ответ — `{ "valid": true }`; токен или сессия не создаются.
+Используйте значения из `.env`. Успешный ответ: `{ "accessToken": "<JWT>" }`.
+JWT подписан HS256 и содержит `sub` (id пользователя), `email`, `role`, `iat` и `exp`.
+
+## Регистрация
+
+```sh
+curl -X POST http://localhost:3000/api/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"student@example.com","password":"MyPassword123!","displayName":"Student"}'
+```
+
+Ответ `201`: `{ "email": "student@example.com", "message": "User successfully created" }`.
+
+- `displayName` необязателен: без него сохраняется email.
+- `role` необязателен: по умолчанию `Student`; допустим также `Teacher`. Регистр и значения соответствуют существующему enum. Выбор `Teacher` при регистрации разрешён.
+- Пароль непустой и не длиннее 72 байт UTF-8; хранится bcrypt-хэш с 12 раундами.
+- Повторный email возвращает `409`; неверные поля, `null` и лишние поля — `400`.
+- Неверный пароль и неизвестный email при входе возвращают одинаковый `401`.
+
+Токен можно передавать как `Authorization: Bearer <JWT>` при добавлении защищённых маршрутов. В текущей реализации добавлена выдача токена; refresh и защищённые маршруты в этот функционал не входят. Миграции БД не требуются.
+
+## Postman
+
+Импортируйте `postman/collections/account/users.postman_collection.json` (Account - Auth).
+Запустите коллекцию целиком через Collection Runner: она создаёт уникальные тестовые email,
+проверяет регистрацию Student и Teacher, повторный email, вход, payload и срок JWT,
+а также ошибки `400` и `401`. Токен Student сохраняется в переменную `accessToken`.
+Переменная `baseUrl` по умолчанию — `http://localhost:3000/api`.
+Сценарии создают двух пользователей при каждом запуске; используйте локальную тестовую БД.
 
 ## Команды
 
