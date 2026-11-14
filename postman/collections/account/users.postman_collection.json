@@ -1,0 +1,65 @@
+{
+  "info": {
+    "name": "Account - Users (API pending)",
+    "description": "Черновик запросов для будущего HTTP API пользователей. Сейчас в account нет UserController или маршрутов создания, поиска и удаления пользователей: эти запросы вернут 404. Пути, формат тела и ответы предварительные и требуют согласования при реализации API. Запускать только в локальной среде с тестовыми данными.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "userEmail",
+      "value": "postman-user@example.com",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Создать пользователя (маршрут не реализован)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"displayName\": \"Postman Test User\",\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"LocalTestPassword123!\",\n  \"role\": \"Student\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/users",
+        "description": "Предполагаемый маршрут и тело. Сейчас API не существует; HTTP-обработчик должен безопасно хешировать пароль перед вызовом UserService."
+      },
+      "response": []
+    },
+    {
+      "name": "Найти пользователя по email (маршрут не реализован)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/users?email={{userEmail}}",
+        "description": "Предполагаемый маршрут и параметр email; фактический контракт ещё не определён."
+      },
+      "response": []
+    },
+    {
+      "name": "Удалить пользователя по email (маршрут не реализован)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/users?email={{userEmail}}",
+        "description": "Предполагаемый маршрут и параметр email; фактический контракт ещё не определён. Удаление относится только к локальным тестовым данным."
+      },
+      "response": []
+    }
+  ]
+}
