@@ -48,3 +48,6 @@ plan.md
 
 **/.env
 .env
+
+# Local-only workflow notes
+/git-flow.md
