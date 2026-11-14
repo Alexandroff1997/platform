@@ -1,5 +1,6 @@
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { JwtService } from '@nestjs/jwt';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UserRole } from '@platform/shared';
 import { hashSync } from 'bcryptjs';
@@ -39,7 +40,7 @@ describe('User persistence', () => {
     };
     const module = await Test.createTestingModule({
       imports: [UserModule],
-      providers: [AuthService],
+      providers: [AuthService, { provide: JwtService, useValue: {} }],
     })
       .overrideProvider(getRepositoryToken(UserEntity))
       .useValue(database as unknown as Repository<UserEntity>)
@@ -99,7 +100,7 @@ describe('User persistence', () => {
   it('authenticates with credentials retrieved through the user module', async () => {
     await expect(
       auth.validateCredentials(input.email, 'correct-password'),
-    ).resolves.toEqual({ valid: true });
+    ).resolves.toEqual(user);
   });
 
   it('rejects an incorrect password and an unknown user', async () => {
