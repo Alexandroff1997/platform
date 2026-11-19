@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { MessagingModule } from '../../messaging/messaging.module';
 import { UserModule } from '../user/user.module';
-import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { AuthRmqHandler } from './auth-rmq.handler';
 import { createJwtOptions } from './jwt.config';
 
 @Module({
   imports: [
+    MessagingModule,
     UserModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -16,7 +18,6 @@ import { createJwtOptions } from './jwt.config';
         createJwtOptions(config.get<string>('JWT_SECRET')),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, AuthRmqHandler],
 })
 export class AuthModule {}

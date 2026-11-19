@@ -1,110 +1,42 @@
 # Platform
 
-Монорепозиторий Nx с сервисами на NestJS. Сейчас доступен сервис **account** с PostgreSQL, регистрацией и JWT-аутентификацией.
+Монорепозиторий Nx с сервисами на NestJS.
 
-## Быстрый старт
+- `apps/api` принимает HTTP-запросы, проверяет JWT и передаёт команды в `account` через RabbitMQ.
+- `apps/account` регистрирует пользователей, хранит их в PostgreSQL и выдаёт JWT.
+- `libs/contracts`, `libs/auth` и `libs/shared` содержат общие RPC-контракты, проверку JWT и типы.
 
-Потребуются Node.js 24, npm и Docker.
+## Окружение
 
-```sh
-npm ci
-cp .env.example .env
-docker compose up -d --wait
-npm run db:migration:run
-npm run db:seed
-npx nx serve account
-```
+Для локального запуска нужны Node.js 24, npm и Docker. При первой настройке создайте каждый `.env` из соседнего `.env.example`.
 
-Перед запуском API сгенерируйте секрет и добавьте его в `.env` как `JWT_SECRET` (не менее 32 байт):
+| Файл                | Переменные                                                                              |
+| ------------------- | --------------------------------------------------------------------------------------- |
+| `.env`              | Общие `RABBITMQ_URL` и `JWT_SECRET`                                                     |
+| `apps/account/.env` | `DATABASE_URL`, а для тестового пользователя — `SEED_USER_EMAIL` и `SEED_USER_PASSWORD` |
+| `apps/api/.env`     | `PORT` (по умолчанию `3000`)                                                            |
 
-```sh
-node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
-```
+Задайте случайный `JWT_SECRET` длиной не менее 32 байт в корневом `.env`. Приоритет настроек убывает в таком порядке — окружение процесса, `.env` сервиса, корневой `.env`.
 
-Без корректного `JWT_SECRET` сервис не запустится. Срок действия токена — один час.
+## Локальный запуск
 
-Перед запуском сида при необходимости измените `SEED_USER_EMAIL` и `SEED_USER_PASSWORD` в `.env`. Сид предназначен только для локальной базы и не изменяет существующего пользователя.
+1. Установите зависимости — `npm ci`.
+2. Поднимите PostgreSQL и RabbitMQ — `docker compose up -d --wait`.
+3. Примените миграции — `npm run db:migration:run`.
+4. При необходимости задайте `SEED_USER_PASSWORD` и создайте тестового пользователя — `npm run db:seed`.
+5. Запустите `npx nx serve account` и `npx nx serve api` в отдельных терминалах.
 
-API доступен по адресу `http://localhost:3000/api`. Проверить вход:
+API по умолчанию доступен на `http://localhost:3000/api`. Панель RabbitMQ доступна на `http://127.0.0.1:15672`. Данные для входа указаны в `compose.yaml`.
 
-```sh
-curl -X POST http://localhost:3000/api/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"test@example.com","password":"test"}'
-```
+## HTTP API
 
-Используйте значения из `.env`. Успешный ответ: `{ "accessToken": "<JWT>" }`.
-JWT подписан HS256 и содержит `sub` (id пользователя), `email`, `role`, `iat` и `exp`.
+| Маршрут                   | Назначение                                                     |
+| ------------------------- | -------------------------------------------------------------- |
+| `POST /api/auth/register` | Регистрация пользователя                                       |
+| `POST /api/auth/login`    | Вход и выдача `access_token`                                   |
+| `GET /api/auth/me`        | Данные пользователя по заголовку `Authorization: Bearer <JWT>` |
 
-## Регистрация
+## Проверки
 
-```sh
-curl -X POST http://localhost:3000/api/auth/register \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"student@example.com","password":"MyPassword123!","displayName":"Student"}'
-```
-
-Ответ `201`: `{ "email": "student@example.com", "message": "User successfully created" }`.
-
-- `displayName` необязателен: без него сохраняется email.
-- `role` необязателен: по умолчанию `Student`; допустим также `Teacher`. Регистр и значения соответствуют существующему enum. Выбор `Teacher` при регистрации разрешён.
-- Пароль непустой и не длиннее 72 байт UTF-8; хранится bcrypt-хэш с 12 раундами.
-- Повторный email возвращает `409`; неверные поля, `null` и лишние поля — `400`.
-- Неверный пароль и неизвестный email при входе возвращают одинаковый `401`.
-
-Токен можно передавать как `Authorization: Bearer <JWT>` при добавлении защищённых маршрутов. В текущей реализации добавлена выдача токена; refresh и защищённые маршруты в этот функционал не входят. Миграции БД не требуются.
-
-## Postman
-
-Импортируйте `postman/collections/account/users.postman_collection.json` (Account - Auth).
-Запустите коллекцию целиком через Collection Runner: она создаёт уникальные тестовые email,
-проверяет регистрацию Student и Teacher, повторный email, вход, payload и срок JWT,
-а также ошибки `400` и `401`. Токен Student сохраняется в переменную `accessToken`.
-Переменная `baseUrl` по умолчанию — `http://localhost:3000/api`.
-Сценарии создают двух пользователей при каждом запуске; используйте локальную тестовую БД.
-
-## Команды
-
-```sh
-npx nx run-many -t lint build  # проверка и сборка
-npm run db:migration:show      # статус миграций
-npm run db:migration:revert    # откат последней миграции
-```
-
-Откат миграции создания пользователей удаляет таблицу и её данные.
-
-## Unit-тесты
-
-Запустить все unit-тесты сервиса `account`:
-
-```sh
-nx test account
-```
-
-Для автоматического повторного запуска при изменении файлов:
-
-```sh
-nx test account --watch
-```
-
-Запустить тесты во всех проектах монорепозитория, для которых настроен target `test`:
-
-```sh
-nx run-many -t test
-```
-
-Чтобы проверить только затронутые проекты после изменений:
-
-```sh
-nx affected -t test --base=origin/main
-```
-
-Первый запуск требует установленных зависимостей (`npm ci`).
-
-## Структура
-
-- `apps/account` — сервис, миграции и сиды.
-- `libs/shared` — общие контракты `@platform/shared`.
-- `compose.yaml` — локальный PostgreSQL.
-
-Конфигурация читается из окружения процесса, затем из `apps/account/.env` и корневого `.env`. Секреты храните только в `.env`, а не в файлах-примерах.
+- Линтинг и сборка — `npx nx run-many -t lint build`.
+- Тесты — `npx nx run-many -t test`.

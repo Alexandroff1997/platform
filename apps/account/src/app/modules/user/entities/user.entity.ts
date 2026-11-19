@@ -1,6 +1,6 @@
 import { UserRole } from '@platform/shared';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { IUserWithCredentials } from '../types/user.types';
+import { IUserWithCredentials } from '../user.types';
 
 @Entity('users')
 export class UserEntity implements IUserWithCredentials {
