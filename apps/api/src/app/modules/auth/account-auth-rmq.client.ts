@@ -39,7 +39,7 @@ function isRpcErrorResponse(value: unknown): value is RpcErrorResponse {
 }
 
 @Injectable()
-export class AuthService {
+export class AccountAuthRmqClient {
   constructor(private readonly connection: AmqpConnection) {}
 
   login(dto: AccountLogin.Request): Promise<AccountLogin.Response> {
