@@ -12,7 +12,7 @@ import {
 import { UserRole } from '@platform/shared';
 import { configureHttpApp } from '../../http.config';
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AccountAuthRmqClient } from './account-auth-rmq.client';
 
 describe('Auth HTTP gateway', () => {
   const secret = 'gateway-test-secret-at-least-32-bytes';
@@ -41,7 +41,7 @@ describe('Auth HTTP gateway', () => {
       ],
       controllers: [AuthController],
       providers: [
-        AuthService,
+        AccountAuthRmqClient,
         { provide: AmqpConnection, useValue: connection },
       ],
     }).compile();
