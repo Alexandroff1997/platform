@@ -163,10 +163,10 @@
               "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
               "const body = pm.response.json();",
               "pm.test('login returns an access token', function () {",
-              "  pm.expect(body.accessToken).to.be.a('string').and.not.empty;",
-              "  pm.expect(Object.keys(body)).to.eql(['accessToken']);",
+              "  pm.expect(body.access_token).to.be.a('string').and.not.empty;",
+              "  pm.expect(Object.keys(body)).to.eql(['access_token']);",
               "});",
-              "const parts = body.accessToken.split('.');",
+              "const parts = body.access_token.split('.');",
               "pm.test('JWT has three parts', function () { pm.expect(parts).to.have.lengthOf(3); });",
               "let header;",
               "let claims;",
@@ -184,7 +184,7 @@
               "  pm.expect(claims.exp - claims.iat).to.eql(3600);",
               "});",
               "pm.collectionVariables.set('studentSub', claims.sub);",
-              "pm.collectionVariables.set('accessToken', body.accessToken);"
+              "pm.collectionVariables.set('accessToken', body.access_token);"
             ]
           }
         }
@@ -260,8 +260,8 @@
             "exec": [
               "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
               "const body = pm.response.json();",
-              "pm.test('login returns an access token', function () { pm.expect(body.accessToken).to.be.a('string').and.not.empty; });",
-              "const parts = body.accessToken.split('.');",
+              "pm.test('login returns an access token', function () { pm.expect(body.access_token).to.be.a('string').and.not.empty; });",
+              "const parts = body.access_token.split('.');",
               "pm.test('JWT has three parts', function () { pm.expect(parts).to.have.lengthOf(3); });",
               "let header;",
               "let claims;",

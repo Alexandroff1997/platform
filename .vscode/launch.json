@@ -18,6 +18,22 @@
         "${workspaceFolder}/dist/apps/account/**/*.(m|c|)js",
         "!**/node_modules/**"
       ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug api with Nx",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["nx", "serve", "api"],
+      "autoAttachChildProcesses": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/dist/apps/api/**/*.(m|c|)js",
+        "!**/node_modules/**"
+      ]
     }
   ]
 }

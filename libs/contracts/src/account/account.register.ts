@@ -1,4 +1,5 @@
 import {
+  IsEmail,
   IsEnum,
   IsNotEmpty,
   IsString,
@@ -6,9 +7,11 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { UserRole } from '@platform/shared';
-import { LoginDto } from './login.dto';
+import { Request as LoginRequest } from './account.login';
 
-export class RegisterDto extends LoginDto {
+export const topic = 'account-register-command';
+
+export class Request extends LoginRequest {
   @ValidateIf((_object, value) => value !== undefined)
   @IsString()
   @IsNotEmpty()
@@ -20,4 +23,15 @@ export class RegisterDto extends LoginDto {
   @ValidateIf((_object, value) => value !== undefined)
   @IsEnum(UserRole)
   role?: UserRole;
+}
+
+export class Response {
+  @IsEmail()
+  @IsNotEmpty()
+  @IsString()
+  email!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  message!: string;
 }

@@ -8,7 +8,7 @@ import { UserRole } from '@platform/shared';
 import { compare, hashSync } from 'bcryptjs';
 import { QueryFailedError } from 'typeorm';
 import { UserEntity } from '../user/entities/user.entity';
-import { UserService } from '../user/user.service';
+import { UserRepository } from '../user/user.repository';
 import { AuthService } from './auth.service';
 
 const secret = 'test-only-secret-with-at-least-32-bytes';
@@ -33,7 +33,7 @@ describe('AuthService', () => {
       create: jest.fn().mockResolvedValue(user),
       findByEmail: jest.fn().mockResolvedValue(user),
     };
-    auth = new AuthService(users as unknown as UserService, jwt);
+    auth = new AuthService(users as unknown as UserRepository, jwt);
   });
 
   it('registers with a salted bcrypt hash and safe response', async () => {

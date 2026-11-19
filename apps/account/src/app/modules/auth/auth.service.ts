@@ -5,12 +5,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import type { AccountLogin, AccountRegister } from '@platform/contracts';
 import { UserRole } from '@platform/shared';
 import { compare, hash, hashSync } from 'bcryptjs';
 import { QueryFailedError } from 'typeorm';
 import { UserEntity } from '../user/entities/user.entity';
-import { UserService } from '../user/user.service';
-import { RegisterDto } from './dto/register.dto';
+import { UserRepository } from '../user/user.repository';
 
 const BCRYPT_ROUNDS = 12;
 const DUMMY_HASH = hashSync('timing-equalizer', BCRYPT_ROUNDS);
@@ -18,18 +18,18 @@ const DUMMY_HASH = hashSync('timing-equalizer', BCRYPT_ROUNDS);
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly userService: UserService,
+    private readonly userRepository: UserRepository,
     private readonly jwtService: JwtService,
   ) {}
 
   async register(
-    dto: RegisterDto,
-  ): Promise<{ email: string; message: string }> {
+    dto: AccountRegister.Request,
+  ): Promise<AccountRegister.Response> {
     this.validatePasswordLength(dto.password);
     const passwordHash = await hash(dto.password, BCRYPT_ROUNDS);
 
     try {
-      const user = await this.userService.create({
+      const user = await this.userRepository.create({
         email: dto.email,
         displayName: dto.displayName ?? dto.email,
         passwordHash,
@@ -48,10 +48,7 @@ export class AuthService {
     }
   }
 
-  async login(
-    email: string,
-    password: string,
-  ): Promise<{ accessToken: string }> {
+  async login(email: string, password: string): Promise<AccountLogin.Response> {
     const user = await this.validateCredentials(email, password);
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
@@ -66,7 +63,7 @@ export class AuthService {
     password: string,
   ): Promise<UserEntity> {
     this.validatePasswordLength(password);
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userRepository.findByEmail(email);
     const passwordHash = user === null ? DUMMY_HASH : user.passwordHash;
     const matches = await compare(password, passwordHash);
     if (user === null || !matches) {

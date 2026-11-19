@@ -24,6 +24,14 @@ export default [
           //   приложению зависеть от библиотек собственного scope.
           depConstraints: [
             {
+              sourceTag: 'scope:api',
+              onlyDependOnLibsWithTags: [
+                'scope:api',
+                'scope:shared',
+                'type:contracts',
+              ],
+            },
+            {
               // Общие контракты не тянут сервисный код.
               sourceTag: 'scope:shared',
               onlyDependOnLibsWithTags: ['scope:shared', 'type:contracts'],
